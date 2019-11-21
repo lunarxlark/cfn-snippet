@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/urfave/cli"
 	"github.com/lunarxlark/cfn-snippet/cfn"
+	"github.com/urfave/cli"
 )
 
 func main() {
