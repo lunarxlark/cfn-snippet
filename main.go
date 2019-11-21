@@ -10,48 +10,8 @@ import (
 	"path/filepath"
 
 	"github.com/urfave/cli"
+	"github.com/lunarxlark/cfn-snippet/cfn"
 )
-
-const DefJSONName = "CloudFormationResourceSpecification.json"
-
-var DefJSONMap = map[string]string{
-	"ap-northeast-1": "https://doigdx0kgq9el.cloudfront.net/latest/gzip/CloudFormationResourceSpecification.json",
-}
-
-type CfnDef struct {
-	PropertyTypes                map[string]PropertyType `json:"PropertyTypes"`
-	ResourceTypes                map[string]ReourceType  `json:"ResourceTypes"`
-	ResourceSpecificationVersion string                  `json:"ResourceSpecificationVersion"`
-}
-
-type PropertyType struct {
-	Documentation string              `json:"Documentation"`
-	Properties    map[string]Property `json:"Properties"`
-}
-
-type Property struct {
-	Documentation     string `json:"Documentation"`
-	DuplicatesAllowed bool   `json:"DuplicatesAllowed"`
-	ItemType          string `json:"ItemType"`
-	PrimitiveItemType string `json:"PrimitiveItemType"`
-	PrimitiveType     string `json:"PrimitiveType"`
-	Required          bool   `json:"Required"`
-	Type              string `json:"Type"`
-	UpdateType        string `json:"UpdateType"`
-}
-
-type ReourceType struct {
-	Documentation string               `json:"Documentation"`
-	Attributes    map[string]Attribute `json:"Attributes"`
-	Properties    map[string]Property  `json:"Properties"`
-}
-
-type Attribute struct {
-	ItemType          string `json:"ItemType"`
-	PrimitiveItemType string `json:"PrimitiveItemType"`
-	PrimitiveType     string `json:"PrimitiveType"`
-	Type              string `json:"Type"`
-}
 
 func main() {
 	app := cli.NewApp()
@@ -63,7 +23,7 @@ func main() {
 			Name:    "update",
 			Aliases: []string{"u"},
 			Usage:   "update cloudformation definition by getting from link in aws cfn doc.",
-			Action:  update,
+			Action:  cmdUpdate,
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "region",
@@ -76,7 +36,7 @@ func main() {
 			Name:    "parse",
 			Aliases: []string{"p"},
 			Usage:   "parse CFn def json",
-			Action:  parse,
+			Action:  cmdParse,
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:  "region",
@@ -93,33 +53,24 @@ func main() {
 	}
 }
 
-func parse(ctx *cli.Context) {
+func cmdParse(ctx *cli.Context) {
 	region := ctx.String("region")
-	fpath := filepath.Join(region, DefJSONName)
+	fpath := filepath.Join(region, cfn.DefJSONName)
 	bytes, err := ioutil.ReadFile(fpath)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	cfnDef := CfnDef{}
+	cfnDef := cfn.CfnDef{}
 	err = json.Unmarshal(bytes, &cfnDef)
 	if err != nil {
 		fmt.Printf("ERROR:%v", err.Error())
 	}
-	// DEBUG
-	//for ptName, pt := range cfnDef.PropertyTypes {
-	//	fmt.Printf("%s", ptName)
-	//	fmt.Printf("%s", pt.Documentation)
-	//	for pName, p := range pt.Properties {
-	//		fmt.Println(pName)
-	//		fmt.Println(p)
-	//	}
-	//}
 }
 
-func update(ctx *cli.Context) {
+func cmdUpdate(ctx *cli.Context) {
 	region := ctx.String("region")
-	url := DefJSONMap[region]
+	url := cfn.DefJSONMap[region]
 	defJSONName := filepath.Base(url)
 	err := os.Mkdir(region, 0755)
 	if err != nil {
