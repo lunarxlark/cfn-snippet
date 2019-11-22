@@ -120,4 +120,5 @@ func cmdUpdate(ctx *cli.Context) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+	fmt.Printf("success to get definition JSON of CloudFormation in %s", region)
 }
