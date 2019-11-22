@@ -45,12 +45,29 @@ func main() {
 				},
 			},
 		},
+		{
+			Name:    "create",
+			Aliases: []string{"c"},
+			Usage:   "create snippet from CloudFormation definition json",
+			Action:  cmdCreate,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "region",
+					Usage: "which region's cfn definition do you get.",
+					Value: "ap-northeast-1",
+				},
+			},
+		},
 	}
 
 	err := app.Run(os.Args)
 	if err != nil {
 		fmt.Println("fatal")
 	}
+}
+
+func cmdCreate(ctx *cli.Context) {
+	//region := ctx.String("region")
 }
 
 func cmdParse(ctx *cli.Context) {
