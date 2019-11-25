@@ -13,6 +13,11 @@ import (
 	"github.com/urfave/cli"
 )
 
+const (
+	DefDir      = "def"
+	SnippetsDir = "snippets"
+)
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "test"
@@ -67,7 +72,32 @@ func main() {
 }
 
 func cmdCreate(ctx *cli.Context) {
-	//region := ctx.String("region")
+	region := ctx.String("region")
+	snippetsRegionDir := filepath.Join(SnippetsDir, region)
+	defRegionDir := filepath.Join(DefDir, region)
+	err := os.MkdirAll(snippetsRegionDir, 0755)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	f, err := os.Create(filepath.Join(snippetsRegionDir, "cfn.snippets"))
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	defer f.Close()
+
+	defFilePath := filepath.Join(defRegionDir, "CloudFormationResourceSpecification.json")
+	bytes, err := ioutil.ReadFile(defFilePath)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	// how to write snippets
+
+	_, err = io.WriteString(f, string(bytes))
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Printf("success to create snippets of CloudFormation in %s", region)
 }
 
 func cmdParse(ctx *cli.Context) {
@@ -89,12 +119,13 @@ func cmdUpdate(ctx *cli.Context) {
 	region := ctx.String("region")
 	url := cfn.DefJSONMap[region]
 	defJSONName := filepath.Base(url)
-	err := os.Mkdir(region, 0755)
+	defRegionDir := filepath.Join(DefDir, region)
+	err := os.MkdirAll(defRegionDir, 0755)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	f, err := os.Create(filepath.Join(region, defJSONName))
+	f, err := os.Create(filepath.Join(defRegionDir, defJSONName))
 	if err != nil {
 		fmt.Println(err.Error())
 	}
