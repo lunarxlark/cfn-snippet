@@ -92,11 +92,29 @@ func cmdCreate(ctx *cli.Context) {
 	}
 
 	// how to write snippets
-
-	_, err = io.WriteString(f, string(bytes))
+	cfnDef := cfn.CfnDef{}
+	err = json.Unmarshal(bytes, &cfnDef)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Printf("ERROR:%v", err.Error())
 	}
+
+	for propertyTypeName, propertyType := range cfnDef.PropertyTypes {
+		_, err = io.WriteString(f, fmt.Sprintf("# %s\nsnippet %s\nType %s\nProperties\n", propertyType.Documentation, propertyTypeName, propertyTypeName))
+		if err != nil {
+			fmt.Println(err.Error())
+		}
+		for propertyName, property := range propertyType.Properties {
+			if property.ItemType != "" {
+				_, err = io.WriteString(f, fmt.Sprintf("\t%s: %s\n", propertyName, property.ItemType))
+			} else if property.PrimitiveType != "" {
+				_, err = io.WriteString(f, fmt.Sprintf("\t%s: %s\n", propertyName, property.PrimitiveType))
+			} else if property.PrimitiveItemType != "" {
+				_, err = io.WriteString(f, fmt.Sprintf("\t%s: %s\n", propertyName, property.PrimitiveItemType))
+			}
+		}
+		_, err = io.WriteString(f, fmt.Sprintln())
+	}
+
 	fmt.Printf("success to create snippets of CloudFormation in %s", region)
 }
 
