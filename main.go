@@ -14,8 +14,21 @@ import (
 )
 
 const (
-	DefDir      = "def"
-	SnippetsDir = "snippets"
+	DefDir          = "def"
+	SnippetsDir     = "snippets"
+	ResourceSnippet = `
+snippet %s
+Type %s
+Properties%s
+endsnippet
+`
+	PropertySnippet = `
+# %s
+snippet %s
+Type %s
+Properties%s
+endsnippet
+`
 )
 
 func main() {
@@ -91,30 +104,50 @@ func cmdCreate(ctx *cli.Context) {
 		fmt.Println(err.Error())
 	}
 
-	// how to write snippets
 	cfnDef := cfn.CfnDef{}
 	err = json.Unmarshal(bytes, &cfnDef)
 	if err != nil {
 		fmt.Printf("ERROR:%v", err.Error())
 	}
 
-	for propertyTypeName, propertyType := range cfnDef.PropertyTypes {
-		_, err = io.WriteString(f, fmt.Sprintf("# %s\nsnippet %s\nType %s\nProperties\n", propertyType.Documentation, propertyTypeName, propertyTypeName))
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		for propertyName, property := range propertyType.Properties {
-			if property.ItemType != "" {
-				_, err = io.WriteString(f, fmt.Sprintf("\t%s: %s\n", propertyName, property.ItemType))
+	// Resource
+	for resourceTypeName, resourceType := range cfnDef.ResourceTypes {
+		pOutput := ""
+		i := 0
+		for propertyName, property := range resourceType.Properties {
+			if property.Type != "" {
+				pOutput = fmt.Sprintf("%s\n\t%s: ${%d:%s}", pOutput, propertyName, i, property.Type)
+			} else if property.ItemType != "" {
+				pOutput = fmt.Sprintf("%s\n\t%s: ${%d:%s}", pOutput, propertyName, i, property.ItemType)
 			} else if property.PrimitiveType != "" {
-				_, err = io.WriteString(f, fmt.Sprintf("\t%s: %s\n", propertyName, property.PrimitiveType))
+				pOutput = fmt.Sprintf("%s\n\t%s: ${%d:%s}", pOutput, propertyName, i, property.PrimitiveType)
 			} else if property.PrimitiveItemType != "" {
-				_, err = io.WriteString(f, fmt.Sprintf("\t%s: %s\n", propertyName, property.PrimitiveItemType))
+				pOutput = fmt.Sprintf("%s\n\t%s: ${%d:%s}", pOutput, propertyName, i, property.PrimitiveItemType)
 			}
+			i++
 		}
-		_, err = io.WriteString(f, fmt.Sprintln())
+		_, err = io.WriteString(f, fmt.Sprintf(ResourceSnippet, resourceTypeName, resourceTypeName, pOutput))
 	}
 
+	// Property
+	for propertyTypeName, propertyType := range cfnDef.PropertyTypes {
+
+		pOutput := ""
+		i := 0
+		for propertyName, property := range propertyType.Properties {
+			if property.Type != "" {
+				pOutput = fmt.Sprintf("%s\n\t%s: ${%d:%s}", pOutput, propertyName, i, property.Type)
+			} else if property.ItemType != "" {
+				pOutput = fmt.Sprintf("%s\n\t%s: ${%d:%s}", pOutput, propertyName, i, property.ItemType)
+			} else if property.PrimitiveType != "" {
+				pOutput = fmt.Sprintf("%s\n\t%s: ${%d:%s}", pOutput, propertyName, i, property.PrimitiveType)
+			} else if property.PrimitiveItemType != "" {
+				pOutput = fmt.Sprintf("%s\n\t%s: ${%d:%s}", pOutput, propertyName, i, property.PrimitiveItemType)
+			}
+			i++
+		}
+		_, err = io.WriteString(f, fmt.Sprintf(PropertySnippet, propertyType.Documentation, propertyTypeName, propertyTypeName, pOutput))
+	}
 	fmt.Printf("success to create snippets of CloudFormation in %s", region)
 }
 
